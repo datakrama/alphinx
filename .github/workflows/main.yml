@@ -107,4 +107,4 @@ jobs:
           IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/${{ github.repository }}
 
           buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ steps.prep.outputs.version }}
-          buildah push $IMAGE_ID:$VERSION
+          buildah push $IMAGE_ID:${{ steps.prep.outputs.version }}

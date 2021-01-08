@@ -106,8 +106,5 @@ jobs:
         run: |
           IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/${{ github.repository }}
 
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=${{ steps.prep.outputs.version }}
-
-          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:$VERSION
+          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ steps.prep.outputs.version }}
           buildah push $IMAGE_ID:$VERSION

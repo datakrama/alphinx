@@ -100,7 +100,7 @@ jobs:
             --tag $CONTAINER_IMAGE_NAME .
 
       - name: Log into github registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | buildah login $CONTAINER_IMAGE_REGISTRY -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u ${{ github.actor }} --password-stdin $CONTAINER_IMAGE_REGISTRY
 
       - name: Push image to github registry
         run: |

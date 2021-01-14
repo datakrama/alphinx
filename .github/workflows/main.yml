@@ -45,66 +45,47 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    strategy:
+      matrix:
+        include:
+          - dir: 7.3
+            version: 7.3
+            latest: true
+          - dir: 7.3/laravel
+            version: 7.3-laravel
+            latest: false
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Repo metadata
-        id: repo
-        uses: actions/github-script@v3
-        with:
-          script: |
-            const repo = await github.repos.get(context.repo)
-            return repo.data
-      
-      - name: Prepare
-        id: prep
-        run: |
-          CONTAINER_IMAGE=$CONTAINER_IMAGE_NAME
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            VERSION=nightly
-          elif [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          elif [[ $GITHUB_REF == refs/heads/* ]]; then
-            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
-            if [ "${{ github.event.repository.default_branch }}" = "$VERSION" ]; then
-              VERSION=latest
-            fi
-          elif [[ $GITHUB_REF == refs/pull/* ]]; then
-            VERSION=pr-${{ github.event.number }}
-          fi
-          TAGS="${CONTAINER_IMAGE}:${VERSION}"
-          if [[ $VERSION =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            MINOR=${VERSION%.*}
-            MAJOR=${MINOR%.*}
-            TAGS="$TAGS,${CONTAINER_IMAGE}:${MINOR},${CONTAINER_IMAGE}:${MAJOR},${CONTAINER_IMAGE}:latest"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            TAGS="$TAGS,${CONTAINER_IMAGE}:sha-${GITHUB_SHA::8}"
-          fi
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-
       - name: Build container image
         run: |
-            buildah bud --label org.opencontainers.image.title="${{ fromJson(steps.repo.outputs.result).name }}" \
-            --label org.opencontainers.image.description="${{ fromJson(steps.repo.outputs.result).description }}" \
-            --label org.opencontainers.image.url="${{ fromJson(steps.repo.outputs.result).html_url }}" \
-            --label org.opencontainers.image.source="${{ fromJson(steps.repo.outputs.result).html_url }}" \
-            --label org.opencontainers.image.version="${{ steps.prep.outputs.version }}" \
-            --label org.opencontainers.image.created="${{ steps.prep.outputs.created }}" \
+          buildah bud -f ./${{ matrix.dir }} --format=docker \
+            --label org.opencontainers.image.title="$CONTAINER_IMAGE_NAME" \
+            --label org.opencontainers.image.description="${{ github.event.repository.description }}" \
+            --label org.opencontainers.image.url="${{ github.event.repository.html_url }}" \
+            --label org.opencontainers.image.source="${{ github.event.repository.html_url }}" \
+            --label org.opencontainers.image.version="${{ matrix.version }}" \
+            --label org.opencontainers.image.created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --label org.opencontainers.image.revision="${{ github.sha }}" \
-            --label org.opencontainers.image.licenses="${{ fromJson(steps.repo.outputs.result).license.spdx_id }}" \
+            --label org.opencontainers.image.licenses="${{ github.event.repository.license.spdx_id }}" \
             --tag $CONTAINER_IMAGE_NAME .
 
-      - name: Log into github registry
+      - name: Log in to GitHub Registry
         run: echo ${{ secrets.CR_PAT }} | buildah login -u ${{ github.actor }} --password-stdin $CONTAINER_IMAGE_REGISTRY
 
-      - name: Push image to github registry
+      - name: Push image to GitHub Registry
         run: |
-          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/${{ github.repository }}
+          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME:${{ matrix.version }}
 
-          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ steps.prep.outputs.version }}
-          buildah push $IMAGE_ID:${{ steps.prep.outputs.version }}
+          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID
+          buildah push $IMAGE_ID
+
+      - name: Latest tag
+        if: matrix.latest
+        run: |
+          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME:latest
+
+          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID
+          buildah push $IMAGE_ID

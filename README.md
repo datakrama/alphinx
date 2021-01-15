@@ -1,4 +1,7 @@
 # Docker PHP-FPM 7.3 & Nginx 1.18 on Alpine Linux
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/datakrama/alphinx/CI?label=CI&style=flat-square)
+
 Example PHP-FPM 7.3 & Nginx 1.18 setup for Docker, build on [Alpine Linux](https://www.alpinelinux.org/).
 The image is only +/- 35MB large.
 

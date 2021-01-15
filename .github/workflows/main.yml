@@ -75,11 +75,11 @@ jobs:
         run: |
           IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME
 
-          if [${{ matrix.latest }} == true]; then
-            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }} $IMAGE_ID:latest
+          if [${{ matrix.latest }} == false]; then
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }}
             buildah push $IMAGE_ID:${{ matrix.version }}
           else
-            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }}
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }} $IMAGE_ID:latest
           fi
           buildah push $IMAGE_ID
 

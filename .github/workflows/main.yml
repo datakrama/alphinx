@@ -74,12 +74,13 @@ jobs:
         if: github.event_name == 'push'
         run: |
           IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME
-          
-          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }}
-          buildah push $IMAGE_ID:${{ matrix.version }}
 
           if ${{ matrix.latest }}; then
-            buildah tag $IMAGE_ID:${{ matrix.version }} $IMAGE_ID:latest
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }} $IMAGE_ID:latest
             buildah push $IMAGE_ID:latest
+          else
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }}
           fi
+
+          buildah push $IMAGE_ID:${{ matrix.version }}
 

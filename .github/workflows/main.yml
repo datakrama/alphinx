@@ -45,6 +45,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run tests
+        if: github.event_name == 'pull_request'
         run: |
           if [ -f ./${{ matrix.dir }}/docker-compose.test.yml ]; then
             docker-compose --file ./${{ matrix.dir }}/docker-compose.test.yml build

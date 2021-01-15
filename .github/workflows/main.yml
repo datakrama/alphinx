@@ -18,46 +18,40 @@ env:
   CONTAINER_IMAGE_REGISTRY: ghcr.io
 
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Run tests
-        run: |
-          if [ -f docker-compose.test.yml ]; then
-            docker-compose --file docker-compose.test.yml build
-            docker-compose --file docker-compose.test.yml run sut
-          else
-            docker build . --file Dockerfile
-          fi
-
   # Publish image
-  publish:
-    # Ensure test job passes before pushing image.
-    needs: test
+  build:
 
-    name: Publish
+    name: Build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     strategy:
       matrix:
         include:
           - dir: 7.3
             version: 7.3
-            latest: true
+            latest: false
           - dir: 7.3/laravel
             version: 7.3-laravel
             latest: false
+          - dir: 7.4
+            version: 7.4
+            latest: true
+          - dir: 7.4/laravel
+            version: 7.4-laravel
+            latest: false
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Run tests
+        run: |
+          if [ -f ./${{ matrix.dir }}/docker-compose.test.yml ]; then
+            docker-compose --file ./${{ matrix.dir }}/docker-compose.test.yml build
+            docker-compose --file ./${{ matrix.dir }}/docker-compose.test.yml run sut
+          else
+            docker build . --file ./${{ matrix.dir }}
+          fi
 
       - name: Build container image
         run: |
@@ -76,16 +70,15 @@ jobs:
         run: echo ${{ secrets.CR_PAT }} | buildah login -u ${{ github.actor }} --password-stdin $CONTAINER_IMAGE_REGISTRY
 
       - name: Push image to GitHub Registry
+        if: github.event_name == 'push'
         run: |
-          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME:${{ matrix.version }}
+          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME
 
-          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID
+          if [${{ matrix.latest }}]; then
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }} $IMAGE_ID:latest
+            buildah push $IMAGE_ID:${{ matrix.version }}
+          else
+            buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID:${{ matrix.version }}
+          fi
           buildah push $IMAGE_ID
 
-      - name: Latest tag
-        if: matrix.latest
-        run: |
-          IMAGE_ID=$CONTAINER_IMAGE_REGISTRY/$CONTAINER_IMAGE_NAME:latest
-
-          buildah tag $CONTAINER_IMAGE_NAME $IMAGE_ID
-          buildah push $IMAGE_ID

@@ -9,14 +9,14 @@ RUN apk --no-cache add php7 php7-fpm php7-bcmath php7-ctype php7-fileinfo php7-j
     rm /etc/nginx/conf.d/default.conf
 
 # Configure nginx
-COPY ../../config/nginx.conf /etc/nginx/nginx.conf
+COPY ../../../config/7/nginx.conf /etc/nginx/nginx.conf
 
 # Configure PHP-FPM
-COPY ../../config/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
-COPY ../../../config/php.ini /etc/php7/conf.d/custom.ini
+COPY ../../../config/7/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
+COPY ../../../../config/7/php.ini /etc/php7/conf.d/custom.ini
 
 # Configure supervisord
-COPY ../../config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ../../../config/7/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Setup document root
 RUN mkdir -p /var/www/html

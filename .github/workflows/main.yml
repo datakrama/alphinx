@@ -38,8 +38,8 @@ jobs:
           - dir: 7.4/laravel
             version: 7.4-laravel
             latest: false
-          - dir: 8.0
-            version: 8.0
+          - dir: "8.0"
+            version: "8.0"
             latest: true
           - dir: 8.0/laravel
             version: 8.0-laravel

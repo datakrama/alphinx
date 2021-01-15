@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:3
+FROM docker.io/library/alpine:3.12
 LABEL Maintainer="Tim de Pater <code@trafex.nl>" \
       Description="Lightweight container with Nginx 1.18 & PHP-FPM 7.3 based on Alpine Linux."
 

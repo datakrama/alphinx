@@ -1,6 +1,4 @@
 FROM docker.io/library/alpine:3.13
-LABEL Maintainer="Tim de Pater <code@trafex.nl>" \
-      Description="Lightweight container with Nginx 1.18 & PHP-FPM 7.3 based on Alpine Linux."
 
 # Install packages and remove default server definition
 RUN apk --no-cache add php7 php7-fpm php7-bcmath php7-ctype php7-fileinfo php7-json php7-mbstring \
